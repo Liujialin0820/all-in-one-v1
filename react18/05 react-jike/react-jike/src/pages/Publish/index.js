@@ -17,6 +17,10 @@ import "react-quill-new/dist/quill.snow.css";
 import { useState } from "react";
 import { createArticleAPI } from "@/apis/article";
 import { useChannel } from "@/hooks/useChannel";
+import { useSearchParams } from "react-router-dom";
+import { getArticleByIdAPI } from "@/apis/article";
+import { useEffect } from "react";
+
 
 const { Option } = Select;
 
@@ -51,17 +55,38 @@ const Publish = () => {
   const onTypeChange = (e) => {
     setImageType(e.target.value);
   };
+  const [searchParams] = useSearchParams()
+  const articleId = searchParams.get('id')
+  const [form] = Form.useForm()
+
+  useEffect(() => {
+    async function getArticle() {
+      const res = await getArticleByIdAPI(articleId)
+      const { cover, ...formValue } = res.data
+      // 设置表单数据
+      form.setFieldsValue({ ...formValue, type: cover.type })
+      // 2. 回填封面图片
+      setImageType(cover.type) // 封面类型
+      setImageList(cover.images.map(url => ({ url }))) // 封面list
+    }
+
+
+    if (articleId) {
+      // 拉取数据回显
+      getArticle()
+    }
+  }, [articleId, form])
+
 
   return (
     <div className="publish">
       <Card
         title={
-          <Breadcrumb
-            items={[
-              { title: <Link to={"/"}>首页</Link> },
-              { title: "发布文章" },
-            ]}
-          />
+    <Breadcrumb items={[
+      { title: <Link to={'/'}>首页</Link> },
+      { title: `${articleId ? '编辑文章' : '发布文章'}` },
+    ]}
+    />
         }
       >
         <Form
@@ -69,6 +94,7 @@ const Publish = () => {
           wrapperCol={{ span: 16 }}
           initialValues={{ type: 0 }}
           onFinish={onFinish}
+          form={form}
         >
           <Form.Item
             label="标题"
@@ -107,6 +133,7 @@ const Publish = () => {
                 name="image"
                 maxCount={imageType}
                 multiple={imageType > 1}
+                fileList={imageList}
               >
                 <div style={{ marginTop: 8 }}>
                   <PlusOutlined />

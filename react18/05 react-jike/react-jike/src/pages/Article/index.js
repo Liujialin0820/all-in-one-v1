@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   Breadcrumb,
@@ -6,7 +6,7 @@ import {
   Button,
   Radio,
   DatePicker,
-  Select,
+  Select, Popconfirm
 } from "antd";
 import locale from "antd/es/date-picker/locale/zh_CN";
 import { Table, Tag, Space } from "antd";
@@ -14,12 +14,14 @@ import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import img404 from "@/assets/error.png";
 import { useChannel } from "@/hooks/useChannel";
 import { useEffect, useState } from "react";
-import { getArticleListAPI } from "@/apis/article";
+import { delArticleAPI, getArticleListAPI } from "@/apis/article";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const Article = () => {
+  const navigate = useNavigate();
+
   const columns = [
     {
       title: "封面",
@@ -67,14 +69,26 @@ const Article = () => {
       render: (data) => {
         return (
           <Space size="middle">
-            <Button type="primary" shape="circle" icon={<EditOutlined />} />
             <Button
               type="primary"
-              danger
               shape="circle"
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/publish?id=${data.id}`)}
             />
-          </Space>
+            <Popconfirm
+              title="确认删除该条文章吗?"
+              onConfirm={() => delArticle(data)}
+              okText="确认"
+              cancelText="取消"
+            >
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Space >
         );
       },
     },
@@ -87,7 +101,7 @@ const Article = () => {
 
   const [params, setParams] = useState({
     page: 1,
-    per_page: 4,
+    per_page: 2,
     begin_pubdate: null,
     end_pubdate: null,
     status: null,
@@ -124,6 +138,23 @@ const Article = () => {
 
   const { channelList } = useChannel();
 
+  // 删除文章
+  const delArticle = async (data) => {
+    await delArticleAPI(data.id);
+    // 删除后重新获取列表数据
+    fetchArticleList(params);
+  }
+
+  const onPageChange = (page) => {
+    console.log(page);
+    // 修改参数依赖 触发useEffect重新获取数据
+    setParams({
+      ...params,
+      page: page.current,
+      per_page: page.pageSize
+    });
+
+  }
   return (
     <div>
       <Card
@@ -169,7 +200,10 @@ const Article = () => {
         </Form>
       </Card>
       <Card title={`根据筛选条件共查询到 ${article.count} 条结果：`}>
-        <Table rowKey="id" columns={columns} dataSource={article.list} />
+        <Table rowKey="id" columns={columns} dataSource={article.list} pagination={{
+          total: article.count,
+          pageSize: params.per_page
+        }} onChange={onPageChange} />
       </Card>
     </div>
   );
