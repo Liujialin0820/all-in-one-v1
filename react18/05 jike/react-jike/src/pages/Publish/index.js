@@ -15,12 +15,11 @@ import "./index.scss";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { useState } from "react";
-import { createArticleAPI } from "@/apis/article";
+import { createArticleAPI, updateArticleByIdAPI } from "@/apis/article";
 import { useChannel } from "@/hooks/useChannel";
 import { useSearchParams } from "react-router-dom";
 import { getArticleByIdAPI } from "@/apis/article";
 import { useEffect } from "react";
-
 
 const { Option } = Select;
 
@@ -39,10 +38,20 @@ const Publish = () => {
       title: title,
       cover: {
         type: imageType,
-        images: imageList.map((item) => item.response.data.url),
+        images: imageList.map((item) => {
+          if (item.response) {
+            return item.response.data.url;
+          } else {
+            return item.url;
+          }
+        }),
       },
     };
-    await createArticleAPI(params);
+    if (articleId) {
+      await updateArticleByIdAPI({ ...params, id: articleId });
+    } else {
+      await createArticleAPI(params);
+    }
   };
 
   const [imageList, setImageList] = useState([]);
@@ -55,38 +64,37 @@ const Publish = () => {
   const onTypeChange = (e) => {
     setImageType(e.target.value);
   };
-  const [searchParams] = useSearchParams()
-  const articleId = searchParams.get('id')
-  const [form] = Form.useForm()
+  const [searchParams] = useSearchParams();
+  const articleId = searchParams.get("id");
+  const [form] = Form.useForm();
 
   useEffect(() => {
     async function getArticle() {
-      const res = await getArticleByIdAPI(articleId)
-      const { cover, ...formValue } = res.data
+      const res = await getArticleByIdAPI(articleId);
+      const { cover, ...formValue } = res.data;
       // 设置表单数据
-      form.setFieldsValue({ ...formValue, type: cover.type })
+      form.setFieldsValue({ ...formValue, type: cover.type });
       // 2. 回填封面图片
-      setImageType(cover.type) // 封面类型
-      setImageList(cover.images.map(url => ({ url }))) // 封面list
+      setImageType(cover.type); // 封面类型
+      setImageList(cover.images.map((url) => ({ url }))); // 封面list
     }
-
 
     if (articleId) {
       // 拉取数据回显
-      getArticle()
+      getArticle();
     }
-  }, [articleId, form])
-
+  }, [articleId, form]);
 
   return (
     <div className="publish">
       <Card
         title={
-    <Breadcrumb items={[
-      { title: <Link to={'/'}>首页</Link> },
-      { title: `${articleId ? '编辑文章' : '发布文章'}` },
-    ]}
-    />
+          <Breadcrumb
+            items={[
+              { title: <Link to={"/"}>首页</Link> },
+              { title: `${articleId ? "编辑文章" : "发布文章"}` },
+            ]}
+          />
         }
       >
         <Form

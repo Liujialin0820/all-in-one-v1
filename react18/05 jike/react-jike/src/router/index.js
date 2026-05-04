@@ -1,15 +1,18 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from "react-router-dom";
 
-import Login from '@/pages/Login'
-import Layout from '@/pages/Layout'
-import Publish from '@/pages/Publish'
-import Article from '@/pages/Article'
-import Home from '@/pages/Home'
-import AuthRoute from '@/components/AuthRoute'
+import Login from "@/pages/Login";
+import Layout from "@/pages/Layout";
+import AuthRoute from "@/components/AuthRoute";
+
+// 路由懒加载 后面要suspense包裹
+import { lazy, Suspense } from "react";
+const Publish = lazy(() => import("@/pages/Publish"));
+const Article = lazy(() => import("@/pages/Article"));
+const Home = lazy(() => import("@/pages/Article"));
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: (
       <AuthRoute>
         <Layout />
@@ -18,22 +21,34 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Home />,
+        element: (
+          <Suspense fallback={"加载中"}>
+            <Home />
+          </Suspense>
+        ),
       },
       {
-        path: 'article',
-        element: <Article />,
+        path: "article",
+        element: (
+          <Suspense fallback={"加载中"}>
+            <Article />
+          </Suspense>
+        ),
       },
       {
-        path: 'publish',
-        element: <Publish />,
+        path: "publish",
+        element: (
+          <Suspense fallback={"加载中"}>
+            <Publish />
+          </Suspense>
+        ),
       },
     ],
   },
   {
-    path: '/login',
+    path: "/login",
     element: <Login />,
   },
-])
+]);
 
-export default router
+export default router;

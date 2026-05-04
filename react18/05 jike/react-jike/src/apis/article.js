@@ -37,3 +37,10 @@ export function getArticleByIdAPI(id) {
   });
 }
 
+export function updateArticleByIdAPI(data) {
+  return http({
+    url: `/mp/articles/${data.id}?draft=false`,
+    method: "PUT",
+    data
+  });
+}
